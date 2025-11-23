@@ -635,6 +635,9 @@ rules:
 - DOMAIN-SUFFIX,bilibili.com,HKMTMedia
 - DOMAIN,upos-hz-mirrorakam.akamaized.net,HKMTMedia
 
+# tiktok
+- DOMAIN-SUFFIX,tiktok.com,GlobalMedia
+
 # (DNS Cache Pollution Protection)
 # > Google
 - DOMAIN-SUFFIX,ampproject.org,PROXY
