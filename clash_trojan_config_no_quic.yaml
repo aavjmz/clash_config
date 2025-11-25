@@ -88,7 +88,7 @@ proxies:
   server: dengw.xyz
   port: 443
   password: 12345678
-  # udp: true
+  udp: true
   # sni: example.com # 填写伪装域名
   alpn:
      - h2
@@ -166,8 +166,7 @@ proxy-groups:
 # 规则
 rules:
 # 禁用quic
-- AND,(AND,(DST-PORT,443),(NETWORK,UDP)),(NOT,((GEOSITE,cn))),REJECT
-- AND,(AND,(DST-PORT,443),(NETWORK,UDP)),(NOT,((GEOIP,CN))),REJECT
+- AND,((DST-PORT,443),(NETWORK,UDP)),REJECT
 # Unbreak
 # > Google
 - DOMAIN-SUFFIX,googletraveladservices.com,DIRECT
