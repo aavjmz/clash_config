@@ -1272,6 +1272,10 @@ rules:
 - DOMAIN-SUFFIX,grok.com,PROXY
 - DOMAIN-SUFFIX,x.com,PROXY
 
+# cursor
+- DOMAIN-SUFFIX,cursor.com,PROXY
+- DOMAIN-SUFFIX,cursor.sh,PROXY
+- DOMAIN,cursor.so,PROXY
 
 # China Area Network
 # > 360
