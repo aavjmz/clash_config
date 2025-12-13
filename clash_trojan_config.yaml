@@ -1270,7 +1270,9 @@ rules:
 # cursor
 - DOMAIN-SUFFIX,cursor.com,PROXY
 - DOMAIN-SUFFIX,cursor.sh,PROXY
-- DOMAIN,cursor.so,PROXY
+- DOMAIN-SUFFIX,cursor.so,PROXY
+- DOMAIN-SUFFIX,ipostbox.com,PROXY
+- DOMAIN-SUFFIX,ingest.us.sentry.io,PROXY
 
 
 # China Area Network
