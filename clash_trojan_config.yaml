@@ -1273,6 +1273,8 @@ rules:
 - DOMAIN-SUFFIX,cursor.so,PROXY
 - DOMAIN-SUFFIX,ipostbox.com,PROXY
 - DOMAIN-SUFFIX,ingest.us.sentry.io,PROXY
+- DOMAIN-SUFFIX,us.i.posthog.com,PROXY
+- DOMAIN-SUFFIX,cursorapi.com,PROXY
 
 
 # China Area Network
