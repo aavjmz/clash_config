@@ -1280,6 +1280,20 @@ rules:
 - DOMAIN-SUFFIX,ingest.us.sentry.io,PROXY
 - DOMAIN-SUFFIX,us.i.posthog.com,PROXY
 - DOMAIN-SUFFIX,cursorapi.com,PROXY
+- DOMAIN-SUFFIX,gcpp.cursor.sh,PROXY
+
+# Cursor CDN和静态资源
+- DOMAIN,cdn.cursor.sh,PROXY
+- DOMAIN,assets.cursor.sh,PROXY
+
+# 使用关键字匹配包含cursor的域名
+- DOMAIN-KEYWORD,cursor,PROXY
+- PROCESS-NAME,cursor,PROXY
+- PROCESS-NAME,Cursor,PROXY
+- PROCESS-NAME,cursor.exe,PROXY
+- PROCESS-NAME,Cursor.exe,PROXY
+- PROCESS-NAME,cursor-helper,PROXY
+- PROCESS-NAME,cursor-crashpad-handler,PROXY
 
 # China Area Network
 # > 360
