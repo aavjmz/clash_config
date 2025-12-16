@@ -1,0 +1,97 @@
+# Nginx 配置模板 - Trojan-Go 代理
+# 此文件将由 deploy.sh 脚本处理，替换变量后生成实际配置
+#
+# 变量说明：
+# - ${DOMAIN} - Shell变量，会被替换为实际域名
+# - ${WEBSOCKET_PATH} - Shell变量，会被替换为实际WebSocket路径
+# - ${PROXY_LOCATION_BLOCK} - Shell变量，会被替换为伪装网站配置
+# - \$host, \$server_name 等 - Nginx变量，\是转义符，保留$符号给Nginx使用
+
+# HTTP 服务 - Let's Encrypt 验证和 HTTPS 重定向
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN};
+
+    # Let's Encrypt ACME 验证路径
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # 其他请求重定向到 HTTPS
+    location / {
+        return 301 https://\$server_name\$request_uri;
+    }
+}
+
+# HTTPS 服务 - 主配置
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name ${DOMAIN};
+
+    # SSL 证书配置
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN}/chain.pem;
+
+    # SSL 协议和密码套件优化
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_prefer_server_ciphers off;
+
+    # SSL 会话缓存
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    # OCSP Stapling（在线证书状态协议装订）
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    # 安全头部
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    # 隐藏 Nginx 版本信息
+    server_tokens off;
+
+    # Trojan-Go WebSocket 代理路径
+    location ${WEBSOCKET_PATH} {
+        proxy_pass http://trojan-go:8443;
+        proxy_http_version 1.1;
+
+        # WebSocket 升级头部
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # 标准代理头部
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        # 超时配置
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_connect_timeout 75s;
+
+        # 禁用缓冲
+        proxy_buffering off;
+    }
+
+    # 伪装网站根路径
+    location / {
+${PROXY_LOCATION_BLOCK}
+    }
+
+    # 禁止访问隐藏文件
+    location ~ /\. {
+        deny all;
+    }
+}
