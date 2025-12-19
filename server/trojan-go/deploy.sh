@@ -970,11 +970,11 @@ trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=0&sni=${DOMAIN}&ws=1&wspath
 
 【证书管理】
 证书路径: ${DEPLOY_DIR}/certbot/conf/live/${DOMAIN}/
-证书自动续期: 已配置（每12小时检查）
+证书自动续期: 已配置（每12小时检查，后台运行）
 续期日志: ${DEPLOY_DIR}/certbot/logs/renew.log
-查看证书状态: cd ${DEPLOY_DIR} && docker compose run --rm certbot certificates
-手动测试续期: cd ${DEPLOY_DIR} && docker compose run --rm certbot renew --dry-run
-手动强制续期: cd ${DEPLOY_DIR} && docker compose run --rm certbot renew --force-renewal
+查看证书状态: cd ${DEPLOY_DIR} && docker compose run --rm --entrypoint "certbot certificates" certbot
+手动测试续期: cd ${DEPLOY_DIR} && docker compose run --rm --entrypoint "certbot renew --non-interactive --dry-run" certbot
+手动强制续期: cd ${DEPLOY_DIR} && docker compose run --rm --entrypoint "certbot renew --non-interactive --force-renewal" certbot
 
 【配置文件位置】
 Trojan-Go: ${DEPLOY_DIR}/trojan-go/config/config.json
