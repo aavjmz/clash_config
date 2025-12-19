@@ -810,7 +810,9 @@ obtain_ssl_certificate() {
 
     # 使用 Certbot 申请证书
     print_info "运行 Certbot 申请证书..."
-    docker compose run --rm certbot certonly --webroot \
+    docker compose run --rm --entrypoint "certbot" certbot certonly \
+        --non-interactive \
+        --webroot \
         --webroot-path=/var/www/certbot \
         -d "$DOMAIN" \
         --email "$EMAIL" \
