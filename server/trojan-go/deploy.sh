@@ -775,7 +775,7 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --deploy-hook \"docker exec trojan-nginx nginx -s reload\" || true; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew || true; sleep 12h & wait $${!}; done;'"
     logging:
       driver: "json-file"
       options:
