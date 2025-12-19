@@ -776,7 +776,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./certbot/logs:/var/log/letsencrypt
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do echo \"[$$(date)] Checking for certificate renewals...\"; certbot renew --webroot --webroot-path=/var/www/certbot --post-hook \"echo \\\"[$$(date)] Certificate renewed successfully\\\" && touch /etc/letsencrypt/renewed.flag\" 2>&1 | tee -a /var/log/letsencrypt/renew.log || true; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do echo \"[$$(date)] Checking for certificate renewals...\"; certbot renew --non-interactive --webroot --webroot-path=/var/www/certbot --post-hook \"echo \\\"[$$(date)] Certificate renewed successfully\\\" && touch /etc/letsencrypt/renewed.flag\" 2>&1 | tee -a /var/log/letsencrypt/renew.log || true; sleep 12h & wait $${!}; done;'"
     logging:
       driver: "json-file"
       options:
