@@ -381,7 +381,7 @@ install_docker() {
 create_directory_structure() {
     print_info "创建目录结构..."
 
-    mkdir -p "$DEPLOY_DIR"/{nginx/{conf.d,html,ssl},trojan-go/{config,logs},certbot/{conf,www}}
+    mkdir -p "$DEPLOY_DIR"/{nginx/{conf.d,html,ssl},trojan-go/{config,logs},certbot/{conf,www,logs}}
 
     print_success "目录结构创建完成"
 }
@@ -775,7 +775,8 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew || true; sleep 12h & wait $${!}; done;'"
+      - ./certbot/logs:/var/log/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do echo \"[\\$$(date)] Checking for certificate renewals...\"; certbot renew --webroot --webroot-path=/var/www/certbot --post-hook \"echo \\\"[\\$$(date)] Certificate renewed successfully\\\" && touch /etc/letsencrypt/renewed.flag\" 2>&1 | tee -a /var/log/letsencrypt/renew.log || true; sleep 12h & wait $${!}; done;'"
     logging:
       driver: "json-file"
       options:
@@ -962,6 +963,7 @@ trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=0&sni=${DOMAIN}&ws=1&wspath
 查看服务状态: cd ${DEPLOY_DIR} && docker compose ps
 查看 Nginx 日志: cd ${DEPLOY_DIR} && docker compose logs -f nginx
 查看 Trojan 日志: cd ${DEPLOY_DIR} && docker compose logs -f trojan-go
+查看 Certbot 日志: cd ${DEPLOY_DIR} && docker compose logs -f certbot
 重启所有服务: cd ${DEPLOY_DIR} && docker compose restart
 停止所有服务: cd ${DEPLOY_DIR} && docker compose down
 启动所有服务: cd ${DEPLOY_DIR} && docker compose up -d
@@ -969,7 +971,10 @@ trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=0&sni=${DOMAIN}&ws=1&wspath
 【证书管理】
 证书路径: ${DEPLOY_DIR}/certbot/conf/live/${DOMAIN}/
 证书自动续期: 已配置（每12小时检查）
-手动续期: cd ${DEPLOY_DIR} && docker compose run --rm certbot renew
+续期日志: ${DEPLOY_DIR}/certbot/logs/renew.log
+查看证书状态: cd ${DEPLOY_DIR} && docker compose run --rm certbot certificates
+手动测试续期: cd ${DEPLOY_DIR} && docker compose run --rm certbot renew --dry-run
+手动强制续期: cd ${DEPLOY_DIR} && docker compose run --rm certbot renew --force-renewal
 
 【配置文件位置】
 Trojan-Go: ${DEPLOY_DIR}/trojan-go/config/config.json
