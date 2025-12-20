@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# Trojan-Go 一键部署脚本
+# Xray Trojan 一键部署脚本
 #
 # 功能：
 # - 自动安装 Docker 和 Docker Compose
@@ -11,6 +11,7 @@
 # - 支持反向代理真实网站作为伪装
 # - 自动生成随机 WebSocket 路径
 # - 健康检查和部署验证
+# - Nginx 前置处理 TLS，Xray 后端处理 Trojan 协议
 #
 # 使用方法：
 # sudo bash deploy.sh
@@ -27,7 +28,7 @@ readonly NC='\033[0m' # No Color
 
 # 全局变量
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOY_DIR="/root/trojan-deploy"
+DEPLOY_DIR="/root/xray-deploy"
 DOMAIN=""
 EMAIL=""
 PROXY_URL=""
@@ -79,7 +80,7 @@ print_error() {
 print_banner() {
     echo -e "${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║                                                          ║${NC}"
-    echo -e "${GREEN}║        Trojan-Go 一键部署脚本 v1.0                       ║${NC}"
+    echo -e "${GREEN}║        Xray Trojan 一键部署脚本 v2.0                     ║${NC}"
     echo -e "${GREEN}║        安全 · 隐蔽 · 易用                                ║${NC}"
     echo -e "${GREEN}║                                                          ║${NC}"
     echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
@@ -381,40 +382,15 @@ install_docker() {
 create_directory_structure() {
     print_info "创建目录结构..."
 
-    mkdir -p "$DEPLOY_DIR"/{nginx/{conf.d,html,ssl},trojan-go/{config,logs},certbot/{conf,www,logs}}
+    mkdir -p "$DEPLOY_DIR"/{nginx/{conf.d,html,ssl},xray/config,certbot/{conf,www,logs}}
 
     print_success "目录结构创建完成"
 }
 
 download_geodata() {
-    print_info "下载 GeoIP 和 GeoSite 数据文件..."
-
-    local geoip_url="https://github.com/v2fly/geoip/releases/latest/download/geoip.dat"
-    local geosite_url="https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat"
-
-    cd "$DEPLOY_DIR/trojan-go/config"
-
-    if [ -f geoip.dat ]; then
-        print_info "geoip.dat 已存在，跳过下载"
-    else
-        curl -L -o geoip.dat "$geoip_url" || {
-            print_warning "GeoIP 下载失败，尝试备用源..."
-            curl -L -o geoip.dat "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat" || true
-        }
-    fi
-
-    if [ -f geosite.dat ]; then
-        print_info "geosite.dat 已存在，跳过下载"
-    else
-        curl -L -o geosite.dat "$geosite_url" || {
-            print_warning "GeoSite 下载失败，尝试备用源..."
-            curl -L -o geosite.dat "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat" || true
-        }
-        # 重命名为 geosite.dat
-        [ -f dlc.dat ] && mv dlc.dat geosite.dat
-    fi
-
-    print_success "GeoData 文件准备完成"
+    # Xray 内置 GeoIP 和 GeoSite 数据，无需额外下载
+    print_info "Xray 内置 GeoIP/GeoSite 数据，跳过下载"
+    print_success "GeoData 准备完成"
 }
 
 create_default_webpage() {
@@ -488,64 +464,66 @@ EOF
 # 模块 5: 配置生成
 ################################################################################
 
-generate_trojan_config() {
-    print_info "生成 Trojan-Go 配置文件..."
+generate_xray_config() {
+    print_info "生成 Xray 配置文件..."
 
-    # 生成 JSON 密码数组
-    local password_json=$(printf ',"%s"' "${PASSWORDS[@]}")
-    password_json="[${password_json:1}]"
+    # 生成 clients 数组
+    local clients_json=""
+    for i in "${!PASSWORDS[@]}"; do
+        if [ $i -gt 0 ]; then
+            clients_json+=","
+        fi
+        clients_json+="{\"password\":\"${PASSWORDS[$i]}\"}"
+    done
 
-    # 读取模板并替换变量
-    local template_file="$SCRIPT_DIR/templates/trojan-config.json.template"
-
-    if [ -f "$template_file" ]; then
-        # 使用模板生成配置
-        export PASSWORDS_JSON="$password_json"
-        export WEBSOCKET_PATH
-        export DOMAIN
-
-        envsubst < "$template_file" > "$DEPLOY_DIR/trojan-go/config/config.json"
-    else
-        # 直接生成配置
-        cat > "$DEPLOY_DIR/trojan-go/config/config.json" <<EOF
+    # 生成 Xray 配置
+    cat > "$DEPLOY_DIR/xray/config/config.json" <<EOF
 {
-    "run_type": "server",
-    "local_addr": "0.0.0.0",
-    "local_port": 8443,
-    "remote_addr": "trojan-nginx",
-    "remote_port": 80,
-    "password": ${password_json},
-    "log_level": 1,
-    "log_file": "/var/log/trojan-go/trojan.log",
-    "ssl": {
-        "enabled": false
+    "log": {
+        "loglevel": "warning"
     },
-    "tcp": {
-        "no_delay": true,
-        "keep_alive": true,
-        "fast_open": false
-    },
-    "mux": {
-        "enabled": true,
-        "concurrency": 8,
-        "idle_timeout": 60
-    },
-    "websocket": {
-        "enabled": true,
-        "path": "${WEBSOCKET_PATH}",
-        "host": "${DOMAIN}"
-    },
-    "router": {
-        "enabled": true,
-        "block": ["geoip:private"],
-        "geoip": "/etc/trojan-go/geoip.dat",
-        "geosite": "/etc/trojan-go/geosite.dat"
+    "inbounds": [
+        {
+            "port": 8443,
+            "listen": "0.0.0.0",
+            "protocol": "trojan",
+            "settings": {
+                "clients": [
+                    ${clients_json}
+                ]
+            },
+            "streamSettings": {
+                "network": "ws",
+                "wsSettings": {
+                    "path": "${WEBSOCKET_PATH}",
+                    "host": "${DOMAIN}"
+                }
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom",
+            "tag": "direct"
+        },
+        {
+            "protocol": "blackhole",
+            "tag": "block"
+        }
+    ],
+    "routing": {
+        "rules": [
+            {
+                "type": "field",
+                "ip": ["geoip:private"],
+                "outboundTag": "block"
+            }
+        ]
     }
 }
 EOF
-    fi
 
-    print_success "Trojan-Go 配置文件生成完成"
+    print_success "Xray 配置文件生成完成"
 }
 
 generate_nginx_temp_config() {
@@ -667,9 +645,9 @@ server {
     # 隐藏 Nginx 版本信息
     server_tokens off;
 
-    # Trojan-Go WebSocket 代理路径
+    # Xray Trojan WebSocket 代理路径
     location ${WEBSOCKET_PATH} {
-        proxy_pass http://trojan-go:8443;
+        proxy_pass http://xray:8443;
         proxy_http_version 1.1;
 
         # WebSocket 升级头部
@@ -714,7 +692,7 @@ services:
   # Nginx 服务
   nginx:
     image: nginx:alpine
-    container_name: trojan-nginx
+    container_name: xray-nginx
     restart: always
     ports:
       - "80:80"
@@ -725,9 +703,9 @@ services:
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
     depends_on:
-      - trojan-go
+      - xray
     networks:
-      - trojan-net
+      - xray-net
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
@@ -742,18 +720,15 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  # Trojan-Go 服务
-  trojan-go:
-    image: p4gefau1t/trojan-go:latest
-    container_name: trojan-go
+  # Xray 服务
+  xray:
+    image: teddysun/xray:latest
+    container_name: xray
     restart: always
     volumes:
-      - ./trojan-go/config:/etc/trojan-go:ro
-      - ./trojan-go/logs:/var/log/trojan-go
-      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./xray/config:/etc/xray:ro
     networks:
-      - trojan-net
-    command: /usr/bin/trojan-go -config /etc/trojan-go/config.json
+      - xray-net
     healthcheck:
       test: ["CMD-SHELL", "netstat -tuln | grep :8443 || exit 1"]
       interval: 30s
@@ -770,7 +745,7 @@ services:
   # Certbot 证书管理
   certbot:
     image: certbot/certbot
-    container_name: trojan-certbot
+    container_name: xray-certbot
     restart: unless-stopped
     volumes:
       - ./certbot/conf:/etc/letsencrypt
@@ -784,7 +759,7 @@ services:
         max-file: "3"
 
 networks:
-  trojan-net:
+  xray-net:
     driver: bridge
     ipam:
       config:
@@ -925,7 +900,7 @@ save_deployment_info() {
 
     cat > "$info_file" <<INFO_EOF
 ====================================
-Trojan-Go 部署信息
+Xray Trojan 部署信息
 ====================================
 部署时间: $(date '+%Y-%m-%d %H:%M:%S')
 
@@ -964,7 +939,7 @@ trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=0&sni=${DOMAIN}&ws=1&wspath
 【管理命令】
 查看服务状态: cd ${DEPLOY_DIR} && docker compose ps
 查看 Nginx 日志: cd ${DEPLOY_DIR} && docker compose logs -f nginx
-查看 Trojan 日志: cd ${DEPLOY_DIR} && docker compose logs -f trojan-go
+查看 Xray 日志: cd ${DEPLOY_DIR} && docker compose logs -f xray
 查看 Certbot 日志: cd ${DEPLOY_DIR} && docker compose logs -f certbot
 重启所有服务: cd ${DEPLOY_DIR} && docker compose restart
 停止所有服务: cd ${DEPLOY_DIR} && docker compose down
@@ -979,7 +954,7 @@ trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=0&sni=${DOMAIN}&ws=1&wspath
 手动强制续期: cd ${DEPLOY_DIR} && docker compose run --rm --entrypoint "certbot renew --non-interactive --force-renewal" certbot
 
 【配置文件位置】
-Trojan-Go: ${DEPLOY_DIR}/trojan-go/config/config.json
+Xray: ${DEPLOY_DIR}/xray/config/config.json
 Nginx: ${DEPLOY_DIR}/nginx/conf.d/trojan.conf
 Docker Compose: ${DEPLOY_DIR}/docker-compose.yml
 
@@ -1039,7 +1014,7 @@ CLASH_EOF
 
     echo -e "${BLUE}【常用管理命令】${NC}"
     echo -e "查看服务状态: ${GREEN}cd $DEPLOY_DIR && docker compose ps${NC}"
-    echo -e "查看日志: ${GREEN}cd $DEPLOY_DIR && docker compose logs -f${NC}"
+    echo -e "查看 Xray 日志: ${GREEN}cd $DEPLOY_DIR && docker compose logs -f xray${NC}"
     echo -e "重启服务: ${GREEN}cd $DEPLOY_DIR && docker compose restart${NC}"
     echo ""
 }
@@ -1099,7 +1074,7 @@ main() {
 
     # 阶段 5: 配置生成
     print_info "========== 阶段 5/9: 配置文件生成 =========="
-    generate_trojan_config
+    generate_xray_config
     generate_nginx_temp_config
     generate_docker_compose
 
