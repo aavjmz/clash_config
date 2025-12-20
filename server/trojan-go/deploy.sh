@@ -774,9 +774,43 @@ COMPOSE_EOF
 ################################################################################
 
 obtain_ssl_certificate() {
-    print_info "开始申请 SSL 证书..."
+    print_info "开始处理 SSL 证书..."
 
     cd "$DEPLOY_DIR"
+
+    # 检查是否已存在有效证书
+    if [ -f "$DEPLOY_DIR/certbot/conf/live/$DOMAIN/fullchain.pem" ] && \
+       [ -f "$DEPLOY_DIR/certbot/conf/live/$DOMAIN/privkey.pem" ]; then
+        print_info "检测到已存在 SSL 证书，检查有效性..."
+
+        # 检查证书是否过期（提前30天警告）
+        local cert_file="$DEPLOY_DIR/certbot/conf/live/$DOMAIN/fullchain.pem"
+        local expiry_date=$(openssl x509 -enddate -noout -in "$cert_file" 2>/dev/null | cut -d= -f2)
+
+        if [ -n "$expiry_date" ]; then
+            local expiry_epoch=$(date -d "$expiry_date" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "$expiry_date" +%s 2>/dev/null)
+            local current_epoch=$(date +%s)
+            local days_left=$(( (expiry_epoch - current_epoch) / 86400 ))
+
+            if [ "$days_left" -gt 30 ]; then
+                print_success "已有有效 SSL 证书，剩余 $days_left 天，跳过申请"
+                return 0
+            elif [ "$days_left" -gt 0 ]; then
+                print_warning "SSL 证书将在 $days_left 天后过期，建议续期"
+                read -p "是否重新申请证书？[y/N]: " renew_cert
+                if [[ ! "$renew_cert" =~ ^[Yy]$ ]]; then
+                    print_info "使用现有证书继续部署"
+                    return 0
+                fi
+            else
+                print_warning "SSL 证书已过期，需要重新申请"
+            fi
+        else
+            print_warning "无法读取证书过期时间，将重新申请"
+        fi
+    else
+        print_info "未检测到现有证书，将申请新证书"
+    fi
 
     # 启动临时 Nginx（仅 HTTP）
     print_info "启动临时 Nginx 服务..."

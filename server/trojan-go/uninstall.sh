@@ -139,10 +139,11 @@ delete_config_files() {
 # 删除 SSL 证书
 delete_ssl_certificates() {
     echo ""
-    print_warning "是否删除 Let's Encrypt SSL 证书？"
-    print_info "如果保留证书，下次部署可以直接使用"
+    print_info "SSL 证书处理"
+    print_info "默认保留证书，避免频繁申请触发 Let's Encrypt 速率限制"
+    print_warning "Let's Encrypt 限制：每个域名每周最多申请 5 次证书"
 
-    read -p "删除 SSL 证书？[y/N]: " del_cert
+    read -p "是否删除 SSL 证书？（默认保留）[y/N]: " del_cert
 
     if [[ "$del_cert" =~ ^[Yy]$ ]]; then
         if [ -d "$DEPLOY_DIR/certbot/conf" ]; then
@@ -153,7 +154,8 @@ delete_ssl_certificates() {
             print_warning "未找到证书目录"
         fi
     else
-        print_info "保留 SSL 证书"
+        print_success "保留 SSL 证书（推荐）"
+        print_info "证书位置: $DEPLOY_DIR/certbot/conf"
     fi
 }
 
