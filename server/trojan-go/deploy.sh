@@ -610,8 +610,9 @@ server {
 
 # HTTPS 服务 - 主配置
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name ${DOMAIN};
 
     # SSL 证书配置
@@ -708,7 +709,7 @@ services:
       - xray-net
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/.well-known/acme-challenge/ || wget -q --spider --no-check-certificate https://localhost/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
