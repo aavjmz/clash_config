@@ -98,7 +98,7 @@ proxies:
   alpn:
      #- h2 #websocket屏蔽，防止连接不上
      - http/1.1
-  skip-cert-verify: true
+  skip-cert-verify: false
 
 # 代理组策略
 # 策略组示例请查阅 Clash 项目 README 以使用最新格式：https://github.com/Dreamacro/clash/blob/master/README.md
