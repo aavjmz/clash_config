@@ -661,6 +661,7 @@ rules:
 - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,PROXY
 - DOMAIN-KEYWORD,google,PROXY
 - DOMAIN-KEYWORD,blogspot,PROXY
+- DOMAIN-SUFFIX,cloudfunctions.net,PROXY
 # > Microsoft
 - DOMAIN-SUFFIX,onedrive.live.com,PROXY
 - DOMAIN-SUFFIX,xboxlive.com,PROXY
