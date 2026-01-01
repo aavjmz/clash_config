@@ -1090,7 +1090,8 @@ rules:
 - DOMAIN-SUFFIX,vsco.co,PROXY
 - DOMAIN-SUFFIX,xfinity.com,PROXY
 - DOMAIN-SUFFIX,zattoo.com,PROXY
-- DOMAIN-SUFFIX,pendo.io,DIRECT
+- DOMAIN-SUFFIX,pendo.io,PROXY
+- DOMAIN-SUFFIX,tr-rc.lfeeder.com,PROXY
 # USER-AGENT,Roam*,PROXY
 
 # (The Most Popular Sites)
