@@ -1092,6 +1092,8 @@ rules:
 - DOMAIN-SUFFIX,zattoo.com,PROXY
 - DOMAIN-SUFFIX,pendo.io,PROXY
 - DOMAIN-SUFFIX,tr-rc.lfeeder.com,PROXY
+- DOMAIN-SUFFIX,coinbase.com,PROXY
+- DOMAIN-SUFFIX,odm.app-ads-services.com,PROXY
 # USER-AGENT,Roam*,PROXY
 
 # (The Most Popular Sites)
