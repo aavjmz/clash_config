@@ -36,6 +36,7 @@ PROXY_HOST=""
 WEBSOCKET_PATH=""
 PASSWORDS=()
 USE_PROXY_MODE=""
+USE_STAGING_CERT=""
 
 # 错误处理函数
 error_handler() {
@@ -326,7 +327,32 @@ collect_configuration() {
         print_info "已自动生成强密码"
     fi
 
-    # 6. 配置确认
+    # 6. SSL 证书类型选择
+    echo ""
+    echo "请选择 SSL 证书类型："
+    echo "1) Let's Encrypt 正式证书（推荐用于生产环境）"
+    echo "2) Let's Encrypt 测试证书（推荐用于首次部署测试，速率限制宽松）"
+    while true; do
+        read -p "请选择 [1-2]: " cert_choice
+        case $cert_choice in
+            1)
+                USE_STAGING_CERT="no"
+                print_info "将申请正式 SSL 证书"
+                break
+                ;;
+            2)
+                USE_STAGING_CERT="yes"
+                print_warning "测试证书不受浏览器信任，仅用于测试部署流程"
+                print_info "将申请测试 SSL 证书（稍后可切换为正式证书）"
+                break
+                ;;
+            *)
+                print_error "无效选择，请输入 1 或 2"
+                ;;
+        esac
+    done
+
+    # 7. 配置确认
     echo ""
     echo -e "${YELLOW}╔════════════════════════════════════════╗${NC}"
     echo -e "${YELLOW}║     请确认配置信息                     ║${NC}"
@@ -336,6 +362,7 @@ collect_configuration() {
     echo -e "伪装方式: ${GREEN}$([ "$USE_PROXY_MODE" = "yes" ] && echo "反向代理 $PROXY_URL" || echo "本地静态页面")${NC}"
     echo -e "WebSocket 路径: ${GREEN}$WEBSOCKET_PATH${NC}"
     echo -e "用户数量: ${GREEN}${#PASSWORDS[@]}${NC}"
+    echo -e "证书类型: ${GREEN}$([ "$USE_STAGING_CERT" = "yes" ] && echo "Let's Encrypt 测试证书" || echo "Let's Encrypt 正式证书")${NC}"
     echo ""
 
     read -p "确认配置并开始部署？[y/N]: " confirm
@@ -574,7 +601,7 @@ generate_nginx_final_config() {
         proxy_redirect ~^https?://${PROXY_HOST}/(.*)$ https://${DOMAIN}/\$1;
 
         # 替换响应中的域名引用
-        sub_filter_types text/html text/css text/javascript application/javascript;
+        sub_filter_types text/css text/javascript application/javascript;
         sub_filter_once off;
         sub_filter '${PROXY_HOST}' '${DOMAIN}';
 PROXY_BLOCK
@@ -819,7 +846,13 @@ obtain_ssl_certificate() {
     sleep 5
 
     # 使用 Certbot 申请证书
-    print_info "运行 Certbot 申请证书..."
+    local staging_flag=""
+    if [ "$USE_STAGING_CERT" = "yes" ]; then
+        staging_flag="--staging"
+        print_warning "使用测试证书模式（不受浏览器信任）"
+    fi
+
+    print_info "运行 Certbot 申请$([ "$USE_STAGING_CERT" = "yes" ] && echo "测试" || echo "正式")证书..."
     docker compose run --rm --entrypoint "certbot" certbot certonly \
         --non-interactive \
         --webroot \
@@ -828,6 +861,7 @@ obtain_ssl_certificate() {
         --email "$EMAIL" \
         --agree-tos \
         --no-eff-email \
+        $staging_flag \
         --force-renewal
 
     # 验证证书文件
@@ -943,6 +977,7 @@ Xray Trojan 部署信息
 域名: ${DOMAIN}
 WebSocket 路径: ${WEBSOCKET_PATH}
 伪装模式: $([ "$USE_PROXY_MODE" = "yes" ] && echo "反向代理到 $PROXY_URL" || echo "本地静态页面")
+证书类型: $([ "$USE_STAGING_CERT" = "yes" ] && echo "Let's Encrypt 测试证书（不受浏览器信任）" || echo "Let's Encrypt 正式证书")
 
 【用户密码】
 $(for i in "${!PASSWORDS[@]}"; do
@@ -961,7 +996,7 @@ proxies:
     alpn:
       - h2
       - http/1.1
-    skip-cert-verify: false
+    skip-cert-verify: $([ "$USE_STAGING_CERT" = "yes" ] && echo "true  # 测试证书需要跳过验证" || echo "false")
     network: ws
     ws-opts:
       path: ${WEBSOCKET_PATH}
@@ -969,7 +1004,7 @@ proxies:
         Host: ${DOMAIN}
 
 【客户端配置示例 - Shadowrocket】
-trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=0&sni=${DOMAIN}&ws=1&wspath=${WEBSOCKET_PATH}#Trojan-${DOMAIN}
+trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=$([ "$USE_STAGING_CERT" = "yes" ] && echo "1" || echo "0")&sni=${DOMAIN}&ws=1&wspath=${WEBSOCKET_PATH}#Trojan-${DOMAIN}
 
 【管理命令】
 查看服务状态: cd ${DEPLOY_DIR} && docker compose ps
@@ -982,11 +1017,33 @@ trojan://${PASSWORDS[0]}@${DOMAIN}:443?allowInsecure=0&sni=${DOMAIN}&ws=1&wspath
 
 【证书管理】
 证书路径: ${DEPLOY_DIR}/certbot/conf/live/${DOMAIN}/
+证书类型: $([ "$USE_STAGING_CERT" = "yes" ] && echo "测试证书（需要客户端配置 skip-cert-verify: true）" || echo "正式证书")
 证书自动续期: 已配置（每12小时检查，后台运行）
 续期日志: ${DEPLOY_DIR}/certbot/logs/renew.log
 查看证书状态: cd ${DEPLOY_DIR} && docker compose run --rm --entrypoint "certbot certificates" certbot
 手动测试续期: cd ${DEPLOY_DIR} && docker compose run --rm --entrypoint "certbot renew --non-interactive --dry-run" certbot
 手动强制续期: cd ${DEPLOY_DIR} && docker compose run --rm --entrypoint "certbot renew --non-interactive --force-renewal" certbot
+$([ "$USE_STAGING_CERT" = "yes" ] && cat <<'STAGING_HELP'
+
+【切换到正式证书】
+如果你使用测试证书完成测试，现在想切换到正式证书：
+1. 删除测试证书：
+   rm -rf ${DEPLOY_DIR}/certbot/conf/live/${DOMAIN}
+   rm -rf ${DEPLOY_DIR}/certbot/conf/archive/${DOMAIN}
+   rm -rf ${DEPLOY_DIR}/certbot/conf/renewal/${DOMAIN}.conf
+
+2. 申请正式证书：
+   cd ${DEPLOY_DIR}
+   docker compose run --rm --entrypoint "certbot" certbot certonly \
+       --non-interactive --webroot --webroot-path=/var/www/certbot \
+       -d ${DOMAIN} --email ${EMAIL} --agree-tos --force-renewal
+
+3. 重启 Nginx：
+   cd ${DEPLOY_DIR} && docker compose restart nginx
+
+4. 更新客户端配置，将 skip-cert-verify 改为 false
+STAGING_HELP
+)
 
 【配置文件位置】
 Xray: ${DEPLOY_DIR}/xray/config/config.json
@@ -1014,6 +1071,10 @@ display_deployment_info() {
     echo -e "域名: ${GREEN}$DOMAIN${NC}"
     echo -e "WebSocket 路径: ${GREEN}$WEBSOCKET_PATH${NC}"
     echo -e "伪装模式: ${GREEN}$([ "$USE_PROXY_MODE" = "yes" ] && echo "反向代理到 $PROXY_URL" || echo "本地静态页面")${NC}"
+    echo -e "证书类型: ${GREEN}$([ "$USE_STAGING_CERT" = "yes" ] && echo "Let's Encrypt 测试证书" || echo "Let's Encrypt 正式证书")${NC}"
+    if [ "$USE_STAGING_CERT" = "yes" ]; then
+        echo -e "${YELLOW}⚠ 测试证书不受浏览器信任，客户端需配置 skip-cert-verify: true${NC}"
+    fi
     echo ""
 
     echo -e "${BLUE}【用户密码】${NC}"
@@ -1035,7 +1096,7 @@ proxies:
     alpn:
       - h2
       - http/1.1
-    skip-cert-verify: false
+    skip-cert-verify: $([ "$USE_STAGING_CERT" = "yes" ] && echo "true  # 测试证书需要跳过验证" || echo "false")
     network: ws
     ws-opts:
       path: ${WEBSOCKET_PATH}
