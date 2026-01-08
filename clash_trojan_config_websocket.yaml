@@ -71,6 +71,17 @@ hosts:
   #   geoip: true # default
   #   ipcidr: # ips in these subnets will be considered polluted
   #     - 240.0.0.0/4
+dns:
+  fake-ip-filter:
+  - '*.streamax.com' # 锐明域名不分配fakeip
+  - '*.streamax.cn'
+  nameserver-policy:
+    '*.streamax.cn': # 锐明内网域名解析服务器
+    - 192.168.6.100
+    - 192.168.6.100
+    '*.streamax.com':
+    - 192.168.6.100
+    - 192.168.6.110
 
 proxies:
 # 支持的协议及加密算法示例请查阅 Clash 项目 README 以使用最新格式：https://github.com/Dreamacro/clash/blob/master/README.md
