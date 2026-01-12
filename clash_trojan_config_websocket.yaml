@@ -1302,6 +1302,7 @@ rules:
 - DOMAIN-SUFFIX,xai.chronosphere.io,PROXY
 - DOMAIN-SUFFIX,grok.com,PROXY
 - DOMAIN-SUFFIX,x.com,PROXY 
+- DOMAIN-SUFFIX,grokipedia.com,PROXY 
 
 # cursor
 - DOMAIN-SUFFIX,cursor.com,PROXY
