@@ -1,0 +1,42 @@
+{
+    "run_type": "server",
+    "local_addr": "0.0.0.0",
+    "local_port": 8443,
+    "remote_addr": "trojan-nginx",
+    "remote_port": 80,
+    "password": ${PASSWORDS_JSON},
+    "log_level": 2,
+    "log_file": "/var/log/trojan-go/trojan.log",
+    "ssl": {
+        "enabled": false
+    },
+    "tcp": {
+        "no_delay": true,
+        "keep_alive": true,
+        "keep_alive_idle": 30,
+        "keep_alive_interval": 10,
+        "reuse_port": true,
+        "fast_open": true,
+        "fast_open_qlen": 20
+    },
+    "mux": {
+        "enabled": true,
+        "concurrency": 64,
+        "idle_timeout": 120
+    },
+    "websocket": {
+        "enabled": true,
+        "path": "${WEBSOCKET_PATH}",
+        "host": "${DOMAIN}",
+        "compression": false
+    },
+    "router": {
+        "enabled": true,
+        "block": ["geoip:private"],
+        "geoip": "/etc/trojan-go/geoip.dat",
+        "geosite": "/etc/trojan-go/geosite.dat"
+    },
+    "transport_plugin": {
+        "enabled": false
+    }
+}
