@@ -75,18 +75,13 @@ dns:
   fake-ip-filter:
     - '*.local'           # 本地局域网设备
     - '*.lan'             # 企业内部网络
-    - '*.b-cdn.net'       # Bunny CDN (如果出现连接问题)
-    - '*.googleapis.com'  # Google API (也常有问题)
-    # 其他常见 CDN
-    - '*.akamaized.net'
-    - '*.cloudflare.net'
     - '*.streamax.com' # 锐明域名不分配fakeip
     - '*.streamax.cn'
   nameserver-policy:
     # 指定域名解析服务器，防止内网域名解析失败
     '*.streamax.cn': # 锐明内网域名解析服务器
     - 192.168.6.100
-    - 192.168.6.100
+    - 192.168.6.110
     '*.streamax.com':
     - 192.168.6.100
     - 192.168.6.110
