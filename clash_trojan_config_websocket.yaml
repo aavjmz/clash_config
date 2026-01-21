@@ -77,6 +77,12 @@ dns:
     - '*.lan'             # 企业内部网络
     - '*.streamax.com' # 锐明域名不分配fakeip
     - '*.streamax.cn'
+    - '*.anthropic.com'     # Claude服务                                                                                                                                            
+    - '*.claude.ai'         # Claude网站                                                                                                                                            
+    - '*.claude.com'        # Claude CDN                                                                                                                                            
+    - '*.segment.io'        # Claude分析服务                                                                                                                                        
+    - '*.intercom.io'       # Claude客服组件                                                                                                                                        
+    - '*.openai.com'        # 同样原因，如果用ChatGPT 
   nameserver-policy:
     # 指定域名解析服务器，防止内网域名解析失败
     '*.streamax.cn': # 锐明内网域名解析服务器
