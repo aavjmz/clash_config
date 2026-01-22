@@ -71,6 +71,8 @@ hosts:
   #   geoip: true # default
   #   ipcidr: # ips in these subnets will be considered polluted
   #     - 240.0.0.0/4
+  
+  # clash verge 客户端开启DNS覆写，设置域名服务器策略：+.streamax.cn=192.168.6.100;192.168.6.110, +.streamax.com=192.168.6.100;192.168.6.110
 dns:
   fake-ip-filter:
     - '*.local'           # 本地局域网设备
