@@ -200,6 +200,7 @@ rule-providers:
 
 # 规则
 rules:
+- DOMAIN-SUFFIX,soulove.ai,PROXY
 - DOMAIN,antigravity-unleash.goog,PROXY
 - DOMAIN-SUFFIX,b-cdn.net,PROXY
 - RULE-SET,TikTok,PROXY  # 将TikTok流量走代理
