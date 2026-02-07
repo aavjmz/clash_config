@@ -721,6 +721,7 @@ rules:
 - IP-CIDR,54.173.34.141/32,PROXY,no-resolve
 - IP-CIDR,54.235.23.242/32,PROXY,no-resolve
 - IP-CIDR,169.45.248.118/32,PROXY,no-resolve
+- IP-CIDR,45.32.85.66/32,PROXY,no-resolve
 # > Twitter
 - DOMAIN-SUFFIX,pscp.tv,PROXY
 - DOMAIN-SUFFIX,periscope.tv,PROXY
