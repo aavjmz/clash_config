@@ -204,6 +204,8 @@ rules:
 - DOMAIN,antigravity-unleash.goog,PROXY
 - DOMAIN-SUFFIX,b-cdn.net,PROXY
 - RULE-SET,TikTok,PROXY  # 将TikTok流量走代理
+# Custom rules
+- DOMAIN-SUFFIX,scopelypv.com,PROXY
 # Unbreak
 # > Google
 - DOMAIN-SUFFIX,googletraveladservices.com,DIRECT
