@@ -194,6 +194,8 @@ rules:
 # 禁用quic
 - AND,((DST-PORT,443),(NETWORK,UDP)),REJECT
 - RULE-SET,TikTok,PROXY  # 将TikTok流量走代理
+# Custom rules
+- DOMAIN-SUFFIX,scopelypv.com,PROXY
 # Unbreak
 # > Google
 - DOMAIN-SUFFIX,googletraveladservices.com,DIRECT
