@@ -154,6 +154,13 @@ proxy-groups:
     - "trojan"
     - "reality"
 
+# Cursor 代理策略，可切换 DIRECT 或 PROXY
+- name: "CursorProxy"
+  type: select
+  proxies:
+    - "DIRECT"
+    - "PROXY"
+
 # 白名单模式 PROXY，黑名单模式 DIRECT
 - name: "Final"
   type: select
@@ -1305,27 +1312,28 @@ rules:
 - DOMAIN-SUFFIX,x.com,PROXY
 
 # cursor
-- DOMAIN-SUFFIX,cursor.com,PROXY
-- DOMAIN-SUFFIX,cursor.sh,PROXY
-- DOMAIN-SUFFIX,cursor.so,PROXY
+- DOMAIN-SUFFIX,cursor.com,CursorProxy
+- DOMAIN-SUFFIX,cursor.sh,CursorProxy
+- DOMAIN-SUFFIX,cursor.so,CursorProxy
 - DOMAIN-SUFFIX,ipostbox.com,PROXY
 - DOMAIN-SUFFIX,ingest.us.sentry.io,PROXY
 - DOMAIN-SUFFIX,us.i.posthog.com,PROXY
-- DOMAIN-SUFFIX,cursorapi.com,PROXY
-- DOMAIN-SUFFIX,gcpp.cursor.sh,PROXY
+- DOMAIN-SUFFIX,cursorapi.com,CursorProxy
+- DOMAIN-SUFFIX,cursor-cdn.com,CursorProxy
+- DOMAIN-SUFFIX,gcpp.cursor.sh,CursorProxy
 
 # Cursor CDN和静态资源
-- DOMAIN,cdn.cursor.sh,PROXY
-- DOMAIN,assets.cursor.sh,PROXY
+- DOMAIN,cdn.cursor.sh,CursorProxy
+- DOMAIN,assets.cursor.sh,CursorProxy
 
 # 使用关键字匹配包含cursor的域名
-- DOMAIN-KEYWORD,cursor,PROXY
-- PROCESS-NAME,cursor,PROXY
-- PROCESS-NAME,Cursor,PROXY
-- PROCESS-NAME,cursor.exe,PROXY
-- PROCESS-NAME,Cursor.exe,PROXY
-- PROCESS-NAME,cursor-helper,PROXY
-- PROCESS-NAME,cursor-crashpad-handler,PROXY
+- DOMAIN-KEYWORD,cursor,CursorProxy
+- PROCESS-NAME,cursor,CursorProxy
+- PROCESS-NAME,Cursor,CursorProxy
+- PROCESS-NAME,cursor.exe,CursorProxy
+- PROCESS-NAME,Cursor.exe,CursorProxy
+- PROCESS-NAME,cursor-helper,CursorProxy
+- PROCESS-NAME,cursor-crashpad-handler,CursorProxy
 
 # China Area Network
 # > 360
