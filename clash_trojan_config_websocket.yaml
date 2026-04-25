@@ -215,6 +215,13 @@ proxy-groups:
     - "DIRECT"
     - "trojan"
 
+# Marvel Strike Force 神威战队
+- name: "神威战队"
+  type: select
+  proxies:
+    - "PROXY"
+    - "DIRECT"
+
 rule-providers:
   TikTok:
     type: http
@@ -230,7 +237,21 @@ rules:
 - DOMAIN-SUFFIX,b-cdn.net,PROXY
 - RULE-SET,TikTok,PROXY  # 将TikTok流量走代理
 # Custom rules
-- DOMAIN-SUFFIX,scopelypv.com,PROXY
+# > Marvel Strike Force (神威战队)
+# 游戏主服务 / 账号系统
+- DOMAIN-SUFFIX,scopely.com,神威战队
+- DOMAIN-SUFFIX,scopely.io,神威战队
+- DOMAIN-SUFFIX,scopelypv.com,神威战队
+- DOMAIN-SUFFIX,marvelstrikeforce.com,神威战队
+- DOMAIN-SUFFIX,foxnextgames.com,神威战队
+# 内容分发 / 资源下载 (CDN)
+- DOMAIN-SUFFIX,scopely-cdn.com,神威战队
+- DOMAIN-KEYWORD,scopely,神威战队
+# 帮助中心 / 客服
+- DOMAIN-SUFFIX,helpshift.com,神威战队
+# 数据分析 / 广告 SDK（可选 REJECT）
+- DOMAIN-SUFFIX,adjust.com,神威战队
+- DOMAIN-SUFFIX,appsflyer.com,神威战队
 # Unbreak
 # > Google
 - DOMAIN-SUFFIX,googletraveladservices.com,DIRECT
