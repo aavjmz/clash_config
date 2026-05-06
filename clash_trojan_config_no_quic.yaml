@@ -221,9 +221,21 @@ rules:
 - DOMAIN-KEYWORD,scopely,神威战队
 # 帮助中心 / 客服
 - DOMAIN-SUFFIX,helpshift.com,神威战队
-# 数据分析 / 广告 SDK（可选 REJECT）
+# 归因 / 数据分析 SDK — 需与主服务路由一致，否则 IP 不一致触发反作弊
 - DOMAIN-SUFFIX,adjust.com,神威战队
+- DOMAIN-SUFFIX,app.adjust.com,神威战队
 - DOMAIN-SUFFIX,appsflyer.com,神威战队
+# Singular（Scopely 主要归因合作方）
+- DOMAIN-SUFFIX,singular.net,神威战队
+- DOMAIN-SUFFIX,singularsrc.net,神威战队
+- DOMAIN-SUFFIX,sng.link,神威战队
+# 推送通知
+- DOMAIN-SUFFIX,onesignal.com,神威战队
+- DOMAIN-SUFFIX,onesignal.io,神威战队
+# 游戏分析
+- DOMAIN-SUFFIX,gameanalytics.com,神威战队
+# 广告归因（如游戏内含广告）
+- DOMAIN-SUFFIX,kochava.com,神威战队
 # Unbreak
 # > Google
 - DOMAIN-SUFFIX,googletraveladservices.com,DIRECT
